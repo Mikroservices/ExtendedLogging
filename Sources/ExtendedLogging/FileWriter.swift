@@ -10,6 +10,7 @@ internal class FileWriter {
     private var nextFilePathGenerationDate: Date? = nil
     private var fileHandle: FileHandle? = nil
     private var fileSize: Int = 0
+    private var sequenceNumber: Int = 0
     
     init(path: String, rollingInterval: RollingInteval = .day, fileSizeLimitBytes: Int = 10485760) {
         self.path = path
@@ -22,6 +23,7 @@ internal class FileWriter {
             try? file.close()
             self.fileHandle = nil
         }
+        wait()
     }
     
     func write(message: Data?) {
@@ -29,29 +31,33 @@ internal class FileWriter {
             print("[FileWriter] Logged message cannot be nil.")
             return
         }
-        
-        if self.shouldCreateNewFile() {
-            self.setNewFile()
-        }
-        
+                
         self.saveToFile(data: data)
     }
     
     private func saveToFile(data: Data) {
         fileQueue.async {
             do {
-                if let file = self.fileHandle {
-                    file.write(data)
-                    self.fileSize += data.count
-                } else if let file = try? FileHandle(forWritingTo: self.filePath) {
-                    file.seekToEndOfFile()
-                    file.write(data)
+                // do the size / date check in the async queue
+                if self.shouldCreateNewFile() {
+                    self.setNewFile()
+                }
 
-                    self.fileHandle = file
-                    self.fileSize = self.getFileSize()
+                if self.fileHandle == nil {
+                    do {
+                        self.fileHandle = try FileHandle(forWritingTo: self.filePath)
+                        self.fileHandle?.seekToEndOfFile()
+                    } 
+                }
+                
+                if let handle = self.fileHandle {
+                    handle.write(data)
+                    handle.synchronizeFile()
                 } else {
                     try data.write(to: self.filePath, options: .atomic)
                 }
+
+                self.fileSize = self.getFileSize()
             } catch(let error) {
                 print("[FileWriter] Could not write to file: \(self.filePath), error: \(error).")
             }
@@ -74,9 +80,11 @@ internal class FileWriter {
         self.nextFilePathGenerationDate = self.getNextFilePathGenerationDate()
         self.fileSize = 0
         self.createDirectories()
+        FileManager.default.createFile(atPath: self.filePath.path, contents:nil)
     }
     
     private func getFilePathWithDateStamp() -> URL {
+        let fileManager = FileManager.default
         var filePath = self.getFilePath()
         
         let pathExtension = filePath.pathExtension
@@ -84,6 +92,26 @@ internal class FileWriter {
         
         filePath.deletePathExtension()
         filePath.appendPathExtension(timeStamp + "." + pathExtension)
+        
+        // if log file exists at this path, rename it with the next sequence number
+        if fileManager.fileExists(atPath: filePath.path) {
+            var newPath = URL(fileURLWithPath:filePath.path)
+            while fileManager.fileExists(atPath: newPath.path) {
+                newPath = self.getFilePath()
+                newPath.deletePathExtension()
+                newPath.appendPathExtension(timeStamp + String(format: ".%03d.", sequenceNumber) + pathExtension)
+                sequenceNumber += 1
+            }
+        
+            // move old.log -> old.NNN.log
+            do {
+                try fileManager.moveItem(at: filePath, to: newPath)
+            } catch {
+                print("[FileWriter] Could not rotate log file: \(self.filePath.path), to: \(newPath.path).")
+            }
+        } else {
+            sequenceNumber = 0
+        }
         
         return filePath
     }
@@ -139,6 +167,7 @@ internal class FileWriter {
     
     private func getFileSize() -> Int {
         do {
+            self.filePath.removeAllCachedResourceValues()
             let values = try self.filePath.resourceValues(forKeys: [URLResourceKey.fileSizeKey])
             if let fileSize = values.fileSize {
                  return fileSize
@@ -157,6 +186,13 @@ internal class FileWriter {
                                                     attributes: nil)
         } catch (let error) {
             print("[FileWriter] Could not create directory for file: \(self.filePath), error: \(error).")
+        }
+    }
+    
+    // for testing
+    func wait() -> Void {
+        fileQueue.sync {
+            return
         }
     }
 }
