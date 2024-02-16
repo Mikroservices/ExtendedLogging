@@ -1,20 +1,24 @@
 import Foundation
 
 internal class SentryWriter {
-    private let dsn: String;
+    private let dsn: String?
     private let requestQueue = DispatchQueue.init(label: "SentryWriter", qos: .utility)
     
-    init(dsn: String) {
+    init(dsn: String?) {
         self.dsn = dsn
     }
     
     func write(message: Data?) {
+        guard let sentryDsn = self.dsn else {
+            return
+        }
+        
         guard let data = message else {
             print("[SentryWriter] Logged message cannot be nil.")
             return
         }
 
-        guard let url = self.convertToUrl() else {
+        guard let url = self.convertToUrl(sentryDsn: sentryDsn) else {
             print("[SentryWriter] Cannot parse Sentry DSN url.")
             return
         }
@@ -33,8 +37,8 @@ internal class SentryWriter {
         }
     }
     
-    private func convertToUrl() -> URL? {
-        let dsnUrl = URLComponents(string: self.dsn)
+    private func convertToUrl(sentryDsn: String) -> URL? {
+        let dsnUrl = URLComponents(string: sentryDsn)
         
         guard let scheme = dsnUrl?.scheme else {
             return nil

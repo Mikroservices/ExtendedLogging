@@ -14,7 +14,7 @@ public struct SentryLogger: LogHandler {
     private var logFormatter: LogFormatter
     
     public init(label: String,
-                dsn: String,
+                dsn: String?,
                 level: Logger.Level = .debug,
                 metadata: Logger.Metadata = [:]) {
         self.label = label
@@ -51,10 +51,5 @@ public struct SentryLogger: LogHandler {
         set {
             self.metadata[metadataKey] = newValue
         }
-    }
-    
-    // for testing
-    public func wait() -> Void {
-        // fileWriter.wait()
     }
 }
