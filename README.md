@@ -1,9 +1,9 @@
 # :blue_book: ExtendedLogging
 
 ![Build Status](https://github.com/Mikroservices/ExtendedLogging/workflows/Build/badge.svg)
-[![Swift 5.3](https://img.shields.io/badge/Swift-5.3-orange.svg?style=flat)](ttps://developer.apple.com/swift/)
+[![Swift 5.8](https://img.shields.io/badge/Swift-5.8-orange.svg?style=flat)](ttps://developer.apple.com/swift/)
 [![Swift Package Manager](https://img.shields.io/badge/SPM-compatible-4BC51D.svg?style=flat)](https://swift.org/package-manager/)
-[![Platforms OS X | Linux](https://img.shields.io/badge/Platforms-OS%20X%20%7C%20Linux%20-lightgray.svg?style=flat)](https://developer.apple.com/swift/)
+[![Platforms macOS | Linux](https://img.shields.io/badge/Platforms-macOS%20%7C%20Linux%20-lightgray.svg?style=flat)](https://developer.apple.com/swift/)
 
 Library provides additional LogHandlers for Swift Loggig system. Log hander can write information into file.
 You can chose one of following formatters:
