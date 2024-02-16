@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 internal class SentryWriter {
     private let dsn: String?
     private let requestQueue = DispatchQueue.init(label: "SentryWriter", qos: .utility)
