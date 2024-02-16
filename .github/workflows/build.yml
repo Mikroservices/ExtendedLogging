@@ -9,7 +9,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@master
-    - uses: YOCKOW/Action-setup-swift@master
+    - name: Install swift
+      uses: SwiftyLab/setup-swift@latest
       with:
         swift-version: '5.8'
     - name: Install SQLite libs
