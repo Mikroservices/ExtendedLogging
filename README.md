@@ -5,8 +5,8 @@
 [![Swift Package Manager](https://img.shields.io/badge/SPM-compatible-4BC51D.svg?style=flat)](https://swift.org/package-manager/)
 [![Platforms macOS | Linux](https://img.shields.io/badge/Platforms-macOS%20%7C%20Linux%20-lightgray.svg?style=flat)](https://developer.apple.com/swift/)
 
-Library provides additional LogHandlers for Swift Loggig system. Log hander can write information into file.
-You can chose one of following formatters:
+Library provides additional LogHandlers for Swift Loggig system. Log hander can write information into file and to [Sentry](https://sentry.io).
+For `FileLogger` you can chose one of following formatters:
  - SingleLineFormatter - writes each log as single plain line in file,
  - JsonFormatter - writes each log as JSON data.
 
@@ -16,7 +16,7 @@ You need to add library to `Package.swift` file:
 
  - add package to dependencies:
 ```swift
-.package(url: "https://github.com/Mikroservices/ExtendedLogging.git", from: "1.0.0")
+.package(url: "https://github.com/Mikroservices/ExtendedLogging.git", from: "2.0.0")
 ```
 
 - and add product to your target:
@@ -47,7 +47,10 @@ LoggingSystem.bootstrap { label -> LogHandler in
                    logFormatter: JsonFormatter(),
                    rollingInterval: .month, 
                    fileSizeLimitBytes: 10485760
-        )
+        ),
+        SentryLogger(label: label,
+                     dsn: Environment.get("SENTRY_DSN"),
+                     level: Logger.Level.error)
     ])
 }
 ```

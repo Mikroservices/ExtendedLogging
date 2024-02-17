@@ -1,6 +1,14 @@
 import Foundation
 import Logging
 
+#if canImport(UIKit)
+    import UIKit
+#endif
+
+#if os(watchOS)
+    import WatchKit
+#endif
+
 public class SentryFormatter: LogFormatter {
     public var metadata = Logger.Metadata() {
         didSet {
@@ -42,6 +50,7 @@ public class SentryFormatter: LogFormatter {
         let content = self.getEnvelopeContent(level: level,
                                               message: message.description,
                                               eventId: eventId,
+                                              logger: label,
                                               currentDate: currentDate,
                                               fileName: file,
                                               function: function,
@@ -59,15 +68,27 @@ public class SentryFormatter: LogFormatter {
         return !metadata.isEmpty ? metadata.map { "\($0)=\($1)" }.joined(separator: " ") : nil
     }
     
-    private func getEnvelopeContent(level: Logger.Level, message: String, eventId: String, currentDate: Date, fileName: String, function: String, line: UInt) -> EnvelopeContent {
+    private func getEnvelopeContent(
+        level: Logger.Level,
+        message: String,
+        eventId: String,
+        logger: String,
+        currentDate: Date,
+        fileName: String,
+        function: String,
+        line: UInt
+    ) -> EnvelopeContent {
         if level == Logger.Level.critical || level == Logger.Level.error {
             let lastFileName = String(fileName.split(separator: "/").last ?? "")
             
-            return EnvelopeContent(level: level,
+            return EnvelopeContent(level: EnvelopeLogLevel(level: level),
                                    eventId: eventId,
-                                   platform: "swift",
+                                   logger: logger,
+                                   platform: "native",
+                                   serverName: self.getServerName(),
                                    timestamp: currentDate.timeIntervalSince1970,
                                    environment: "production",
+                                   contexts: EnvelopeContext(),
                                    message: nil,
                                    exception: EnvelopeErrorValues(values: [
                                        EnvelopeErrorValue(type: "Error",
@@ -79,13 +100,20 @@ public class SentryFormatter: LogFormatter {
                                                           ]))
                                    ]))
         } else {
-            return EnvelopeContent(level: level,
+            return EnvelopeContent(level: EnvelopeLogLevel(level: level),
                                    eventId: eventId,
-                                   platform: "swift",
+                                   logger: logger,
+                                   platform: "native",
+                                   serverName: self.getServerName(),
                                    timestamp: currentDate.timeIntervalSince1970,
                                    environment: "production",
+                                   contexts: EnvelopeContext(),
                                    message: message,
                                    exception: nil)
         }
+    }
+    
+    private func getServerName() -> String {
+        return Host.current().localizedName ?? ""
     }
 }

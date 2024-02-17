@@ -66,7 +66,7 @@ final class ExtendedLoggingTests: XCTestCase {
         let rotatedFileHandle = try? FileHandle(forReadingFrom: filePath2)
         XCTAssertNotNil(rotatedFileHandle, "Log file missing at (file: \(filePath2.path))")
     }
-
+    
     private func getFilePathWithDateStamp(fileName: URL) -> URL {
         var filePath = fileName
         let pathExtension = filePath.pathExtension
