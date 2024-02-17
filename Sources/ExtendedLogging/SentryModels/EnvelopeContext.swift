@@ -7,9 +7,9 @@ internal struct EnvelopeContext: Encodable {
     let runtime: EnvelopeRuntime
     let culture: EnvelopeCulture
     
-    init() {
+    init(name: String?, version: String?) {
         self.os = EnvelopeOperatingSystem()
-        self.app = EnvelopeApplication()
+        self.app = EnvelopeApplication(name: name, version: version)
         self.device = EnvelopeDevice()
         self.runtime = EnvelopeRuntime()
         self.culture = EnvelopeCulture()

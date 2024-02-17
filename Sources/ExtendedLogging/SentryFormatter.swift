@@ -8,11 +8,16 @@ public class SentryFormatter: LogFormatter {
         }
     }
     
+    private let application: String?
+    private let version: String?
     private var prettyMetadata: String?
     private let jsonEncoder: JSONEncoder
     private let newLine = "\n".data(using: .utf8)!
     
-    public init() {
+    public init(application: String? = nil, version: String? = nil) {
+        self.application = application
+        self.version = version
+
         self.jsonEncoder = JSONEncoder()
         self.jsonEncoder.dateEncodingStrategy = JSONEncoder.DateEncodingStrategy.iso8601
     }
@@ -80,7 +85,7 @@ public class SentryFormatter: LogFormatter {
                                    serverName: self.getServerName(),
                                    timestamp: currentDate.timeIntervalSince1970,
                                    environment: "production",
-                                   contexts: EnvelopeContext(),
+                                   contexts: EnvelopeContext(name: self.application, version: self.version),
                                    message: nil,
                                    exception: EnvelopeErrorValues(values: [
                                        EnvelopeErrorValue(type: "Error",
@@ -99,7 +104,7 @@ public class SentryFormatter: LogFormatter {
                                    serverName: self.getServerName(),
                                    timestamp: currentDate.timeIntervalSince1970,
                                    environment: "production",
-                                   contexts: EnvelopeContext(),
+                                   contexts: EnvelopeContext(name: self.application, version: self.version),
                                    message: message,
                                    exception: nil)
         }

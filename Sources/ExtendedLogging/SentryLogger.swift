@@ -15,12 +15,14 @@ public struct SentryLogger: LogHandler {
     
     public init(label: String,
                 dsn: String?,
+                application: String? = nil,
+                version: String? = nil,
                 level: Logger.Level = .debug,
                 metadata: Logger.Metadata = [:]) {
         self.label = label
         self.logLevel = level
         self.metadata = metadata
-        self.logFormatter = SentryFormatter()
+        self.logFormatter = SentryFormatter(application: application, version: version)
         self.sentryWriter = SentryWriter(dsn: dsn)
     }
 
@@ -34,12 +36,12 @@ public struct SentryLogger: LogHandler {
                     line: UInt) {
 
         let message = try? self.logFormatter.format(label: self.label,
-                                               level: level,
-                                               message: message,
-                                               metadata: metadata,
-                                               file: file,
-                                               function: function,
-                                               line: line)
+                                                    level: level,
+                                                    message: message,
+                                                    metadata: metadata,
+                                                    file: file,
+                                                    function: function,
+                                                    line: line)
 
         self.sentryWriter.write(message: message)
     }

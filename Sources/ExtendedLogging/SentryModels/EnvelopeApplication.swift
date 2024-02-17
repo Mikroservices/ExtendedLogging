@@ -1,13 +1,16 @@
 import Foundation
 
 internal struct EnvelopeApplication: Encodable {
-    let name: String
+    let name: String?
+    let version: String?
     
-    init() {
-        self.name = ProcessInfo.processInfo.processName
+    init(name: String?, version: String?) {
+        self.name = name
+        self.version = version
     }
     
     enum CodingKeys: String, CodingKey {
-        case name
+        case name = "app_name"
+        case version = "app_version"
     }
 }
