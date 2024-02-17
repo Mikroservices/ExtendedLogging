@@ -8,7 +8,7 @@ internal struct EnvelopeDevice: Encodable {
     
     init() {
         self.name = Host.current().localizedName ?? ""
-        self.memorySize = ProcessInfo().physicalMemory
+        self.memorySize = ProcessInfo.processInfo.physicalMemory
         self.bootTime = EnvelopeDevice.getSystemUptime()
     }
     
@@ -20,7 +20,7 @@ internal struct EnvelopeDevice: Encodable {
     }
     
     private static func getSystemUptime() -> Date {
-        let uptime = ProcessInfo().systemUptime
+        let uptime = ProcessInfo.processInfo.systemUptime
         return Date(timeIntervalSinceNow: uptime)
     }
 }

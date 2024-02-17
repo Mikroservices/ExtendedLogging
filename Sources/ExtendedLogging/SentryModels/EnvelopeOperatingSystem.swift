@@ -44,6 +44,6 @@ internal struct EnvelopeOperatingSystem: Encodable {
     }
     
     private static  func getOperatingSystemVersionString() -> String {
-        return ProcessInfo().operatingSystemVersionString
+        return ProcessInfo.processInfo.operatingSystemVersionString
     }
 }
