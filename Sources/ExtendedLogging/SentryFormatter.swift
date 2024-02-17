@@ -1,14 +1,6 @@
 import Foundation
 import Logging
 
-#if canImport(UIKit)
-    import UIKit
-#endif
-
-#if os(watchOS)
-    import WatchKit
-#endif
-
 public class SentryFormatter: LogFormatter {
     public var metadata = Logger.Metadata() {
         didSet {

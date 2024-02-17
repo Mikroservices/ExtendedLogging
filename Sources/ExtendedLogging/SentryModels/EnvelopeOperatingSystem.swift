@@ -1,5 +1,13 @@
 import Foundation
 
+#if canImport(UIKit)
+    import UIKit
+#endif
+
+#if os(watchOS)
+    import WatchKit
+#endif
+
 internal struct EnvelopeOperatingSystem: Encodable {
     let name: String
     let version: String
