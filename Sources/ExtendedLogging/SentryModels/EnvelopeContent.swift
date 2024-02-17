@@ -10,6 +10,7 @@ internal struct EnvelopeContent: Encodable {
     let timestamp: Double
     let environment: String
     let contexts: EnvelopeContext
+    let extra: Dictionary<String, String>
     let message: String?
     let exception: EnvelopeErrorValues?
     
@@ -22,6 +23,7 @@ internal struct EnvelopeContent: Encodable {
         case timestamp
         case environment
         case contexts
+        case extra
         case message
         case exception
     }

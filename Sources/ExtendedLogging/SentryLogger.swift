@@ -2,7 +2,6 @@ import Foundation
 import Logging
 
 public struct SentryLogger: LogHandler {
-    
     public var metadata = Logger.Metadata() {
         didSet {
             self.logFormatter.metadata = self.metadata
@@ -19,18 +18,21 @@ public struct SentryLogger: LogHandler {
                 version: String? = nil,
                 level: Logger.Level = .debug,
                 metadata: Logger.Metadata = [:]) {
-        self.label = label
-        self.logLevel = level
-        self.metadata = metadata
         self.logFormatter = SentryFormatter(application: application, version: version)
         self.sentryWriter = SentryWriter(dsn: dsn)
+
+        self.label = label
+        self.logLevel = level
+        
+        self.metadata = metadata
+        self.logFormatter.metadata = metadata
     }
 
     public let label: String
     
     public func log(level: Logger.Level,
                     message: Logger.Message,
-                    metadata: Logger.Metadata?,
+                    metadata logMetadata: Logger.Metadata?,
                     file: String,
                     function: String,
                     line: UInt) {
@@ -38,7 +40,7 @@ public struct SentryLogger: LogHandler {
         let message = try? self.logFormatter.format(label: self.label,
                                                     level: level,
                                                     message: message,
-                                                    metadata: metadata,
+                                                    metadata: logMetadata,
                                                     file: file,
                                                     function: function,
                                                     line: line)

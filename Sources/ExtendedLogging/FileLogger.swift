@@ -20,11 +20,14 @@ public struct FileLogger: LogHandler {
                 logFormatter: LogFormatter = SingleLineFormatter(),
                 rollingInterval: RollingInteval = .day,
                 fileSizeLimitBytes: Int = 10485760) {
+        self.fileWriter = FileWriter(path: path, rollingInterval: rollingInterval, fileSizeLimitBytes: fileSizeLimitBytes)
+
         self.label = label
         self.logLevel = level
+        self.logFormatter = logFormatter        
+        
         self.metadata = metadata
-        self.logFormatter = logFormatter
-        self.fileWriter = FileWriter(path: path, rollingInterval: rollingInterval, fileSizeLimitBytes: fileSizeLimitBytes)
+        self.logFormatter.metadata = metadata
     }
 
     public let label: String

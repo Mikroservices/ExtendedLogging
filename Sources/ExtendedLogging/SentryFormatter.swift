@@ -2,15 +2,11 @@ import Foundation
 import Logging
 
 public class SentryFormatter: LogFormatter {
-    public var metadata = Logger.Metadata() {
-        didSet {
-            self.prettyMetadata = self.prettify(self.metadata)
-        }
-    }
+    public var metadata = Logger.Metadata()
     
     private let application: String?
     private let version: String?
-    private var prettyMetadata: String?
+    private var prettyMetadata: Dictionary<String, String> = [:]
     private let jsonEncoder: JSONEncoder
     private let newLine = "\n".data(using: .utf8)!
     
@@ -25,18 +21,11 @@ public class SentryFormatter: LogFormatter {
     public func format(label: String,
                        level: Logger.Level,
                        message: Logger.Message,
-                       metadata: Logger.Metadata?,
+                       metadata logMetadata: Logger.Metadata?,
                        file: String,
                        function: String,
                        line: UInt) throws -> Data? {
-
-        // TODO: Save metadata as additional fields.
-//        let prettyMetadata = metadata?.isEmpty ?? true
-//            ? self.prettyMetadata
-//            : self.prettify(self.metadata.merging(metadata!, uniquingKeysWith: { _, new in new }))
-//        let messageLine = "(\(prettyMetadata.map { ", \($0)" } ?? "")): \(message)\n"
-        
-        let eventId = UUID().uuidString // self.createRandomString(length: 32)
+        let eventId = UUID().uuidString
         let currentDate = Date()
 
         let header = EnvelopeHeader(eventId: eventId,
@@ -45,6 +34,7 @@ public class SentryFormatter: LogFormatter {
         
         let type = EnvelopeType()
         let content = self.getEnvelopeContent(level: level,
+                                              metadata: logMetadata,
                                               message: message.description,
                                               eventId: eventId,
                                               logger: label,
@@ -61,12 +51,9 @@ public class SentryFormatter: LogFormatter {
         return data
     }
     
-    private func prettify(_ metadata: Logger.Metadata) -> String? {
-        return !metadata.isEmpty ? metadata.map { "\($0)=\($1)" }.joined(separator: " ") : nil
-    }
-    
     private func getEnvelopeContent(
         level: Logger.Level,
+        metadata logMetadata: Logger.Metadata?,
         message: String,
         eventId: String,
         logger: String,
@@ -86,6 +73,7 @@ public class SentryFormatter: LogFormatter {
                                    timestamp: currentDate.timeIntervalSince1970,
                                    environment: "production",
                                    contexts: EnvelopeContext(name: self.application, version: self.version),
+                                   extra: self.getExtraData(metadata: logMetadata),
                                    message: nil,
                                    exception: EnvelopeErrorValues(values: [
                                        EnvelopeErrorValue(type: "Error",
@@ -105,9 +93,26 @@ public class SentryFormatter: LogFormatter {
                                    timestamp: currentDate.timeIntervalSince1970,
                                    environment: "production",
                                    contexts: EnvelopeContext(name: self.application, version: self.version),
+                                   extra: self.getExtraData(metadata: logMetadata),
                                    message: message,
                                    exception: nil)
         }
+    }
+    
+    private func getExtraData(metadata logMetadata: Logger.Metadata?) -> Dictionary<String, String> {
+        var extra: Dictionary<String, String> = [:]
+        
+        self.metadata.forEach({ (key: String, value: Logger.MetadataValue) in
+            extra[key] = value.description
+        })
+        
+        if let logMetadata {
+            logMetadata.forEach({ (key: String, value: Logger.MetadataValue) in
+                extra[key] = value.description
+            })
+        }
+        
+        return extra
     }
     
     private func getServerName() -> String {
