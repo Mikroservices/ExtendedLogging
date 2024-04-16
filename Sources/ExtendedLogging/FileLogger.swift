@@ -10,17 +10,22 @@ public struct FileLogger: LogHandler {
     }
 
     public var logLevel: Logger.Level = .info        
-    private let fileWriter: FileWriter
+    private let fileWriter: FileWriter?
     private var logFormatter: LogFormatter
     
     public init(label: String,
-                path: String,
+                path: String?,
                 level: Logger.Level = .debug,
                 metadata: Logger.Metadata = [:],
                 logFormatter: LogFormatter = SingleLineFormatter(),
                 rollingInterval: RollingInteval = .day,
                 fileSizeLimitBytes: Int = 10485760) {
-        self.fileWriter = FileWriter(path: path, rollingInterval: rollingInterval, fileSizeLimitBytes: fileSizeLimitBytes)
+        
+        if let path {
+            self.fileWriter = FileWriter(path: path, rollingInterval: rollingInterval, fileSizeLimitBytes: fileSizeLimitBytes)
+        } else {
+            self.fileWriter = nil
+        }
 
         self.label = label
         self.logLevel = level
@@ -38,7 +43,10 @@ public struct FileLogger: LogHandler {
                     file: String,
                     function: String,
                     line: UInt) {
-
+        guard let fileWriter else {
+            return
+        }
+        
         let message = try? self.logFormatter.format(label: self.label,
                                                level: level,
                                                message: message,
@@ -47,7 +55,7 @@ public struct FileLogger: LogHandler {
                                                function: function,
                                                line: line)
 
-        self.fileWriter.write(message: message)
+        fileWriter.write(message: message)
     }
     
     public subscript(metadataKey metadataKey: String) -> Logger.Metadata.Value? {
@@ -61,6 +69,6 @@ public struct FileLogger: LogHandler {
     
     // for testing
     public func wait() -> Void {
-        fileWriter.wait()
+        fileWriter?.wait()
     }
 }

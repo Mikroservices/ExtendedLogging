@@ -9,7 +9,7 @@ public struct SentryLogger: LogHandler {
     }
 
     public var logLevel: Logger.Level = .info
-    private let sentryWriter: SentryWriter
+    private let sentryWriter: SentryWriter?
     private var logFormatter: LogFormatter
     
     public init(label: String,
@@ -19,7 +19,12 @@ public struct SentryLogger: LogHandler {
                 level: Logger.Level = .debug,
                 metadata: Logger.Metadata = [:]) {
         self.logFormatter = SentryFormatter(application: application, version: version)
-        self.sentryWriter = SentryWriter(dsn: dsn)
+        
+        if let dsn {
+            self.sentryWriter = SentryWriter(dsn: dsn)
+        } else {
+            self.sentryWriter = nil
+        }
 
         self.label = label
         self.logLevel = level
@@ -36,7 +41,10 @@ public struct SentryLogger: LogHandler {
                     file: String,
                     function: String,
                     line: UInt) {
-
+        guard let sentryWriter else {
+            return
+        }
+        
         let message = try? self.logFormatter.format(label: self.label,
                                                     level: level,
                                                     message: message,
@@ -45,7 +53,7 @@ public struct SentryLogger: LogHandler {
                                                     function: function,
                                                     line: line)
 
-        self.sentryWriter.write(message: message)
+        sentryWriter.write(message: message)
     }
     
     public subscript(metadataKey metadataKey: String) -> Logger.Metadata.Value? {

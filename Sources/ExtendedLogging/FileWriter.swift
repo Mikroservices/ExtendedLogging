@@ -1,7 +1,7 @@
 import Foundation
 
 internal class FileWriter {
-    private let path: String?
+    private let path: String;
     private let fileSizeLimitBytes: Int
     private let rollingInterval: RollingInteval
     private let fileQueue = DispatchQueue.init(label: "FileWriter", qos: .utility)
@@ -12,7 +12,7 @@ internal class FileWriter {
     private var fileSize: Int = 0
     private var sequenceNumber: Int = 0
     
-    init(path: String?, rollingInterval: RollingInteval = .day, fileSizeLimitBytes: Int = 10485760) {
+    init(path: String, rollingInterval: RollingInteval = .day, fileSizeLimitBytes: Int = 10485760) {
         self.path = path
         self.rollingInterval = rollingInterval
         self.fileSizeLimitBytes = fileSizeLimitBytes
@@ -27,31 +27,27 @@ internal class FileWriter {
     }
     
     func write(message: Data?) {
-        guard let filePath = self.path else {
-            return
-        }
-
         guard let data = message else {
             print("[FileWriter] Logged message cannot be nil.")
             return
         }
                 
-        self.saveToFile(filePath: filePath, data: data)
+        self.saveToFile(data: data)
     }
     
-    private func saveToFile(filePath: String, data: Data) {
+    private func saveToFile(data: Data) {
         fileQueue.async {
             do {
                 // do the size / date check in the async queue
                 if self.shouldCreateNewFile() {
-                    self.setNewFile(filePath: filePath)
+                    self.setNewFile()
                 }
 
                 if self.fileHandle == nil {
                     do {
                         self.fileHandle = try FileHandle(forWritingTo: self.filePath)
                         self.fileHandle?.seekToEndOfFile()
-                    } 
+                    }
                 }
                 
                 if let handle = self.fileHandle {
@@ -74,34 +70,34 @@ internal class FileWriter {
             || self.fileSize > self.fileSizeLimitBytes
     }
     
-    private func setNewFile(filePath: String) {
+    private func setNewFile() {
         if let file = self.fileHandle {
             try? file.close()
             self.fileHandle = nil
         }
 
-        self.filePath = self.getFilePathWithDateStamp(filePath: filePath)
+        self.filePath = self.getFilePathWithDateStamp()
         self.nextFilePathGenerationDate = self.getNextFilePathGenerationDate()
         self.fileSize = 0
         self.createDirectories()
         FileManager.default.createFile(atPath: self.filePath.path, contents:nil)
     }
     
-    private func getFilePathWithDateStamp(filePath: String) -> URL {
+    private func getFilePathWithDateStamp() -> URL {
         let fileManager = FileManager.default
-        var fullFilePath = self.getFullFilePath(filePath: filePath)
+        var filePath = self.getFilePath()
         
-        let pathExtension = fullFilePath.pathExtension
+        let pathExtension = filePath.pathExtension
         let timeStamp = getTimeStamp()
         
-        fullFilePath.deletePathExtension()
-        fullFilePath.appendPathExtension(timeStamp + "." + pathExtension)
+        filePath.deletePathExtension()
+        filePath.appendPathExtension(timeStamp + "." + pathExtension)
         
         // if log file exists at this path, rename it with the next sequence number
-        if fileManager.fileExists(atPath: fullFilePath.path) {
-            var newPath = URL(fileURLWithPath:fullFilePath.path)
+        if fileManager.fileExists(atPath: filePath.path) {
+            var newPath = URL(fileURLWithPath:filePath.path)
             while fileManager.fileExists(atPath: newPath.path) {
-                newPath = self.getFullFilePath(filePath: filePath)
+                newPath = self.getFilePath()
                 newPath.deletePathExtension()
                 newPath.appendPathExtension(timeStamp + String(format: ".%03d.", sequenceNumber) + pathExtension)
                 sequenceNumber += 1
@@ -109,7 +105,7 @@ internal class FileWriter {
         
             // move old.log -> old.NNN.log
             do {
-                try fileManager.moveItem(at: fullFilePath, to: newPath)
+                try fileManager.moveItem(at: filePath, to: newPath)
             } catch {
                 print("[FileWriter] Could not rotate log file: \(self.filePath.path), to: \(newPath.path).")
             }
@@ -117,7 +113,7 @@ internal class FileWriter {
             sequenceNumber = 0
         }
         
-        return fullFilePath
+        return filePath
     }
     
     private func getTimeStamp() -> String {
@@ -143,12 +139,12 @@ internal class FileWriter {
         }
     }
     
-    private func getFullFilePath(filePath: String) -> URL {
-        if (filePath.starts(with: "/")) {
-            return URL(fileURLWithPath: filePath)
+    private func getFilePath() -> URL {
+        if (self.path.starts(with: "/")) {
+            return URL(fileURLWithPath: self.path)
         }
         
-        return getWorkingDirectory().appendingPathComponent(filePath)
+        return getWorkingDirectory().appendingPathComponent(self.path)
     }
     
     private func getWorkingDirectory() -> URL {
